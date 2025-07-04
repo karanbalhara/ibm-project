@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GeoSecure - Global Data Center Location Selector</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    #map {
+      height: 400px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-5xl mx-auto py-10 px-4">
+    <h1 class="text-4xl font-bold mb-6 text-center">GeoSecure</h1>
+    <p class="text-center mb-10 text-lg">Find the safest and most optimal location for your data center based on custom global security and infrastructure filters.</p>
+
+    <!-- Filter Form -->
+    <form id="locationForm" class="bg-white p-6 rounded-lg shadow-md mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold">Disaster Risk</label>
+          <select name="disaster" class="w-full mt-1 border p-2 rounded">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold">Climate Preference</label>
+          <select name="climate" class="w-full mt-1 border p-2 rounded">
+            <option value="cool">Cool</option>
+            <option value="moderate">Moderate</option>
+            <option value="hot">Hot</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold">Political Stability</label>
+          <select name="stability" class="w-full mt-1 border p-2 rounded">
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-semibold">Data Privacy Laws</label>
+          <select name="privacy" class="w-full mt-1 border p-2 rounded">
+            <option value="strict">Strict (e.g. GDPR)</option>
+            <option value="moderate">Moderate</option>
+            <option value="lenient">Lenient</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Find Locations</button>
+    </form>
+
+    <!-- Results Section -->
+    <div id="results" class="space-y-6"></div>
+    <!-- Leaflet Map -->
+    <div id="map" class="mt-8 rounded shadow"></div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    let dataset = {};
+
+    fetch("full_global_data_center_dataset.json")
+      .then(response => response.json())
+      .then(data => { dataset = data; });
+
+    const map = L.map('map').setView([20, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    document.getElementById("locationForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+      const filters = Object.fromEntries(formData.entries());
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+
+      map.eachLayer(layer => {
+        if (layer instanceof L.Marker) map.removeLayer(layer);
+      });
+
+      const results = Object.entries(dataset).filter(([_, loc]) =>
+        loc.disaster === filters.disaster &&
+        loc.climate === filters.climate &&
+        loc.stability === filters.stability &&
+        loc.privacy === filters.privacy
+      );
+
+      if (results.length === 0) {
+        resultsDiv.innerHTML = '<p class="text-red-500">No matching locations found. Try adjusting your filters.</p>';
+        return;
+      }
+
+      results.forEach(([name, loc]) => {
+        const card = document.createElement("div");
+        card.className = "bg-white p-4 rounded shadow";
+        card.innerHTML = `
+          <h2 class="text-xl font-bold">${name}</h2>
+          <p><strong>Disaster Risk:</strong> ${loc.disaster}</p>
+          <p><strong>Climate:</strong> ${loc.climate}</p>
+          <p><strong>Stability:</strong> ${loc.stability}</p>
+          <p><strong>Privacy:</strong> ${loc.privacy}</p>
+        `;
+        resultsDiv.appendChild(card);
+
+        L.marker([loc.lat, loc.lng]).addTo(map)
+          .bindPopup(`<b>${name}</b>`).openPopup();
+      });
+    });
+  </script>
+</body>
+</html>

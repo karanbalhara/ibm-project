@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure Data Center Location Selector</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    #map {
+      height: 400px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-4xl mx-auto py-10 px-4">
+    <h1 class="text-3xl font-bold mb-6">Secure Data Center Location Selector</h1>
+
+    <!-- Filter Form -->
+    <form id="locationForm" class="bg-white p-6 rounded-lg shadow-md mb-8">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block font-semibold">Disaster Risk</label>
+          <select name="disaster" class="w-full mt-1 border p-2 rounded">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold">Climate Preference</label>
+          <select name="climate" class="w-full mt-1 border p-2 rounded">
+            <option value="cool">Cool</option>
+            <option value="moderate">Moderate</option>
+            <option value="hot">Hot</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold">Political Stability</label>
+          <select name="stability" class="w-full mt-1 border p-2 rounded">
+            <option value="high">High</option>
+            <option value="medium">Medium</option>
+            <option value="low">Low</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block font-semibold">Data Privacy Laws</label>
+          <select name="privacy" class="w-full mt-1 border p-2 rounded">
+            <option value="strict">Strict (e.g. GDPR)</option>
+            <option value="moderate">Moderate</option>
+            <option value="lenient">Lenient</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="mt-6 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Find Locations</button>
+    </form>
+
+    <!-- Results Section -->
+    <div id="results" class="space-y-6"></div>
+
+    <!-- Google Map -->
+    <div id="map" class="mt-8"></div>
+  </div>
+
+  <script>
+    const dataset = [
+      {
+        name: "Iceland",
+        lat: 64.9631,
+        lng: -19.0208,
+        disaster: "low",
+        climate: "cool",
+        stability: "high",
+        privacy: "strict"
+      },
+      {
+        name: "Finland",
+        lat: 61.9241,
+        lng: 25.7482,
+        disaster: "low",
+        climate: "cool",
+        stability: "high",
+        privacy: "strict"
+      },
+      {
+        name: "Singapore",
+        lat: 1.3521,
+        lng: 103.8198,
+        disaster: "medium",
+        climate: "hot",
+        stability: "high",
+        privacy: "moderate"
+      },
+      {
+        name: "Switzerland",
+        lat: 46.8182,
+        lng: 8.2275,
+        disaster: "low",
+        climate: "cool",
+        stability: "high",
+        privacy: "strict"
+      },
+      {
+        name: "USA",
+        lat: 37.0902,
+        lng: -95.7129,
+        disaster: "medium",
+        climate: "moderate",
+        stability: "medium",
+        privacy: "moderate"
+      }
+    ];
+
+    let map;
+
+    function initMap() {
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 20, lng: 0 },
+        zoom: 2
+      });
+    }
+
+    document.getElementById("locationForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const formData = new FormData(this);
+      const filters = Object.fromEntries(formData.entries());
+
+      const results = dataset.filter(loc =>
+        loc.disaster === filters.disaster &&
+        loc.climate === filters.climate &&
+        loc.stability === filters.stability &&
+        loc.privacy === filters.privacy
+      );
+
+      const resultsDiv = document.getElementById("results");
+      resultsDiv.innerHTML = "";
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: { lat: 20, lng: 0 },
+        zoom: 2
+      });
+
+      if (results.length === 0) {
+        resultsDiv.innerHTML = '<p class="text-red-500">No matching locations found. Try adjusting your filters.</p>';
+        return;
+      }
+
+      results.forEach(loc => {
+        const card = document.createElement("div");
+        card.className = "bg-white p-4 rounded shadow";
+        card.innerHTML = `
+          <h2 class="text-xl font-bold">${loc.name}</h2>
+          <p><strong>Disaster Risk:</strong> ${loc.disaster}</p>
+          <p><strong>Climate:</strong> ${loc.climate}</p>
+          <p><strong>Political Stability:</strong> ${loc.stability}</p>
+          <p><strong>Data Privacy Laws:</strong> ${loc.privacy}</p>
+        `;
+        resultsDiv.appendChild(card);
+
+        new google.maps.Marker({
+          position: { lat: loc.lat, lng: loc.lng },
+          map,
+          title: loc.name
+        });
+      });
+    });
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&callback=initMap" async defer></script>
+</body>
+</html>
