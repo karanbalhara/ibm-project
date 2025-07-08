@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark"> <!-- default dark mode -->
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,7 +10,6 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-  <!-- Custom Fonts & Styles -->
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
@@ -21,16 +20,16 @@
       font-family: 'Poppins', sans-serif;
     }
 
-    /* Theme background */
     body {
       color: #fff;
       background: linear-gradient(45deg, #23008d, #9900ff, #a2022d, #4a015c, #6600fe, #00607d);
       background-size: 400% 400%;
       animation: gradientBackground 10s ease infinite;
     }
+
     body.light {
       color: #1a1a1a;
-      background: #f1f3f8;
+      background: linear-gradient(to right, #e0eafc, #cfdef3);
       animation: none;
     }
 
@@ -40,22 +39,22 @@
       100% { background-position: 0% 50%; }
     }
 
-    /* Select dropdowns */
     select {
       appearance: none;
       width: 100%;
       padding: 0.5rem;
       border-radius: 0.5rem;
       outline: none;
-      background: rgba(255,255,255,0.2);
-      color: #000;
-    }
-    body.light select {
-      background: #ffffff;
-      color: #000;
+      background: rgb(23, 22, 22);
+      color: #ffffff;
     }
 
-    /* Map container */
+    body.light select {
+      background: #f0f0f5;
+      color: #000;
+      border: 1px solid #ccc;
+    }
+
     #map {
       height: 60vh;
       width: 100%;
@@ -64,21 +63,18 @@
       overflow: hidden;
     }
 
-    /* Scrollbar styling */
-    #results::-webkit-scrollbar {
+    #results::-webkit-scrollbar,
+    #leftScroll::-webkit-scrollbar {
       width: 8px;
     }
-    #results::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    #results::-webkit-scrollbar-thumb {
-      background-color: rgba(255,255,255,0.3);
+    #results::-webkit-scrollbar-thumb,
+    #leftScroll::-webkit-scrollbar-thumb {
+      background-color: rgba(255, 255, 255, 0.3);
       border-radius: 10px;
     }
 
-    /* Card Styling */
     .result-card {
-      background: rgba(0, 0, 0, 0.5);
+      background-color: #333;
       backdrop-filter: blur(8px);
       border-radius: 1.5rem;
       padding: 1rem;
@@ -86,31 +82,66 @@
     }
 
     body.light .result-card {
-      background: #ffffffcc;
+      background: #ffffffdd;
       color: #000;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    body.light .backdrop-blur-sm {
+      background-color: rgba(255, 255, 255, 0.6);
+    }
+
+    .filter-form {
+      background-color: rgba(34, 34, 34, 0.95);
+    }
+
+    body.light .filter-form {
+      background-color: #f5f5f5;
+    }
+
+    .filter-form select {
+      background-color: #333;
+      color: #fff;
+    }
+
+    body.light .filter-form select {
+      background-color: #fff;
+      color: #000;
+    }
+
+    body.light #darkToggle {
+      background-color: #323232 !important;
+    }
+
+    body.light .no-match {
+      color: #000 !important;
+    }
+
+    @media (max-width: 768px) {
+      .flex.h-screen {
+        flex-direction: column;
+      }
+      #map {
+        height: 50vh;
+      }
     }
   </style>
 </head>
-<body>
-  <div class="flex h-screen">
-    <!-- LEFT PANE -->
-    <div class="w-full md:w-2/3 lg:w-3/4 p-6 overflow-y-auto backdrop-blur-sm bg-black/30 relative">
 
-      <!-- Theme toggle -->
+<body>
+  <div class="flex flex-col md:flex-row h-screen">
+    <div class="w-full md:w-2/3 lg:w-3/4 p-6 overflow-y-auto backdrop-blur-sm bg-black/30 relative" id="leftScroll">
       <button id="darkToggle" class="absolute top-6 right-6 p-2 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur flex items-center justify-center transition">
         <svg id="themeIcon" xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 3v1m0 16v1m8.66-9H21m-18 0H3m13.657-5.657l-.707.707M6.05 17.95l-.707.707m12.02 0l.707-.707M6.05 6.05l.707-.707M12 7a5 5 0 100 10 5 5 0 000-10z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m8.66-9H21m-18 0H3m13.657-5.657l-.707.707M6.05 17.95l-.707.707m12.02 0l.707-.707M6.05 6.05l.707-.707M12 7a5 5 0 100 10 5 5 0 000-10z"/>
         </svg>
       </button>
 
       <h1 class="text-4xl font-bold mb-4 text-center">GeoSecure</h1>
       <p class="text-center mb-6 text-lg">Find optimal locations for your data center based on global filters.</p>
 
-      <!-- FILTERS -->
-      <form id="locationForm" class="bg-white/20 backdrop-blur-sm p-6 rounded-lg shadow-md mb-6">
+      <form id="locationForm" class="filter-form p-6 rounded-lg shadow-md mb-6">
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- All filter dropdowns (unchanged) -->
           <div><label class="block font-semibold">Disaster Risk</label><select name="disaster"><option value="">Any</option><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
           <div><label class="block font-semibold">Climate</label><select name="climate"><option value="">Any</option><option value="cool">Cool</option><option value="moderate">Moderate</option><option value="hot">Hot</option></select></div>
           <div><label class="block font-semibold">Political Stability</label><select name="stability"><option value="">Any</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select></div>
@@ -123,12 +154,10 @@
         <button type="submit" class="mt-6 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">Find Locations</button>
       </form>
 
-      <!-- MAP -->
       <div id="map" class="mb-6"></div>
     </div>
 
-    <!-- RIGHT PANE -->
-    <div class="hidden md:block w-1/3 lg:w-1/4 p-4">
+    <div class="md:w-1/3 lg:w-1/4 p-4">
       <div class="bg-black/60 backdrop-blur-sm p-4 rounded-2xl h-full flex flex-col">
         <div id="loader" class="text-center text-blue-200 font-semibold hidden">Loading data...</div>
         <div id="results" class="space-y-4 pr-2 overflow-y-auto flex-1"></div>
@@ -136,124 +165,141 @@
     </div>
   </div>
 
-  <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
- <!-- full HTML same as before until SCRIPT tag at the end -->
-<script>
-  const map = L.map('map').setView([20, 0], 2);
-  const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CartoDB' });
-  const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' });
-  let currentTiles = darkTiles.addTo(map);
+  <script>
+    const map = L.map('map').setView([20, 0], 2);
+    const darkTiles = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap &copy; CartoDB' });
+    const lightTiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors' });
+    let currentTiles = darkTiles.addTo(map);
 
-  const toggleBtn = document.getElementById('darkToggle');
-  const themeIcon = document.getElementById('themeIcon');
-  toggleBtn.addEventListener('click', () => {
-    document.body.classList.toggle('light');
-    map.removeLayer(currentTiles);
-    currentTiles = document.body.classList.contains('light') ? lightTiles.addTo(map) : darkTiles.addTo(map);
-    themeIcon.classList.toggle('rotate-180');
-  });
-
-  let dataset = {};
-  const loader = document.getElementById('loader');
-  const resultsDiv = document.getElementById('results');
-  loader.classList.remove('hidden');
-  fetch('full_global_data_center_dataset.json')
-    .then(res => res.json())
-    .then(data => {
-      dataset = data;
-      loader.classList.add('hidden');
-    })
-    .catch(() => {
-      loader.textContent = 'Failed to load dataset!';
+    const toggleBtn = document.getElementById('darkToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    toggleBtn.addEventListener('click', () => {
+      document.body.classList.toggle('light');
+      map.removeLayer(currentTiles);
+      currentTiles = document.body.classList.contains('light') ? lightTiles.addTo(map) : darkTiles.addTo(map);
+      themeIcon.classList.toggle('rotate-180');
     });
 
-  document.getElementById('locationForm').addEventListener('submit', e => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    const filters = Object.fromEntries(formData.entries());
+    let dataset = {};
+    const loader = document.getElementById('loader');
+    const resultsDiv = document.getElementById('results');
+    loader.classList.remove('hidden');
+    fetch('full_global_data_center_dataset.json')
+      .then(res => res.json())
+      .then(data => {
+        dataset = data;
+        loader.classList.add('hidden');
+      })
+      .catch(() => {
+        loader.textContent = 'Failed to load dataset!';
+      });
 
-    resultsDiv.innerHTML = '';
-    map.eachLayer(l => { if (l instanceof L.Marker) map.removeLayer(l); });
+    document.getElementById('locationForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const filters = Object.fromEntries(formData.entries());
 
-    const attrKeys = {
-      disaster: 'disaster',
-      climate: 'climate',
-      stability: 'stability',
-      privacy: 'privacy',
-      land_price: 'land price',
-      labour_cost: 'labour cost',
-      connectivity: 'connectivity',
-      relations: 'relations'
-    };
+      resultsDiv.innerHTML = '';
+      map.eachLayer(l => { if (l instanceof L.Marker) map.removeLayer(l); });
 
-    const maxScore = Object.keys(attrKeys).length;
-    const results = [];
+      const attrKeys = {
+        disaster: 'disaster',
+        climate: 'climate',
+        stability: 'stability',
+        privacy: 'privacy',
+        land_price: 'land price',
+        labour_cost: 'labour cost',
+        connectivity: 'connectivity',
+        relations: 'relations'
+      };
 
-    for (const [name, locRaw] of Object.entries(dataset)) {
-      const loc = {};
-      for (const [formKey, dataKey] of Object.entries(attrKeys)) {
-        loc[formKey] = locRaw[dataKey] ?? locRaw[formKey] ?? 'N/A';
+      const maxScore = Object.keys(attrKeys).length;
+      const results = [];
+
+      for (const [name, locRaw] of Object.entries(dataset)) {
+        const loc = {};
+        for (const [formKey, dataKey] of Object.entries(attrKeys)) {
+          loc[formKey] = locRaw[dataKey] ?? locRaw[formKey] ?? 'N/A';
+        }
+
+        loc.lat = locRaw.lat;
+        loc.lng = locRaw.lng;
+        loc.iso2 = locRaw.iso2 || locRaw.country_code;
+
+        let score = 0;
+        let eligible = true;
+
+        for (const key of Object.keys(attrKeys)) {
+          if (filters[key] && filters[key] !== loc[key]) {
+            eligible = false;
+            break;
+          }
+          if (filters[key] && filters[key] === loc[key]) {
+            score++;
+          }
+        }
+
+        if (eligible) results.push({ name, loc, score });
       }
 
-      loc.lat = locRaw.lat;
-      loc.lng = locRaw.lng;
-      loc.iso2 = locRaw.iso2 || locRaw.country_code;
+      if (!results.length) {
+        resultsDiv.innerHTML = '<p class="text-red-200 font-semibold no-match">No exact match. Showing closest matches instead:</p>';
+        const fallbackResults = Object.entries(dataset).map(([name, locRaw]) => {
+          const loc = {};
+          for (const [formKey, dataKey] of Object.entries(attrKeys)) {
+            loc[formKey] = locRaw[dataKey] ?? locRaw[formKey] ?? 'N/A';
+          }
+          loc.lat = locRaw.lat;
+          loc.lng = locRaw.lng;
+          loc.iso2 = locRaw.iso2 || locRaw.country_code;
 
-      let score = 0;
-      let eligible = true;
+          let score = 0;
+          for (const key of Object.keys(attrKeys)) {
+            if (filters[key] && filters[key] === loc[key]) {
+              score++;
+            }
+          }
+          return { name, loc, score };
+        }).sort((a, b) => b.score - a.score).slice(0, 5);
 
-      for (const key of Object.keys(attrKeys)) {
-        if (filters[key] && filters[key] !== loc[key]) {
-          eligible = false;
-          break;
-        }
-        if (filters[key] && filters[key] === loc[key]) {
-          score++;
-        }
+        showResults(fallbackResults, maxScore);
+        return;
       }
 
-      if (eligible) results.push({ name, loc, score });
-    }
-
-    if (!results.length) {
-      resultsDiv.innerHTML = '<p class="text-red-200 font-semibold">No matching locations found. Adjust filters.</p>';
-      return;
-    }
-
-    results.sort((a, b) => b.score - a.score);
-    const topResults = results.slice(0, 5);
-    const group = L.featureGroup();
-
-    topResults.forEach(({ name, loc, score }) => {
-      const iso2 = (loc.iso2 || '').toLowerCase();
-      const flagImg = iso2
-        ? `<img src="https://flagcdn.com/24x18/${iso2}.png" alt="${iso2.toUpperCase()} flag" class="inline-block mr-2 rounded-sm shadow">`
-        : '';
-
-      const card = document.createElement('div');
-      card.className = 'result-card';
-      card.innerHTML = `
-        <h2 class="text-xl font-semibold mb-2">${flagImg}${name}</h2>
-        <p><strong>Match:</strong> ${score}/${maxScore}</p>
-        <p><strong>Disaster:</strong> ${loc.disaster}</p>
-        <p><strong>Climate:</strong> ${loc.climate}</p>
-        <p><strong>Stability:</strong> ${loc.stability}</p>
-        <p><strong>Privacy:</strong> ${loc.privacy}</p>
-        <p><strong>Land Price:</strong> ${loc.land_price}</p>
-        <p><strong>Labour Cost:</strong> ${loc.labour_cost}</p>
-        <p><strong>Connectivity:</strong> ${loc.connectivity}</p>
-        <p><strong>Relations:</strong> ${loc.relations}</p>`;
-      resultsDiv.appendChild(card);
-
-      const marker = L.marker([loc.lat, loc.lng])
-        .bindPopup(`<b>${name}</b><br>Score: ${score}/${maxScore}`);
-      marker.addTo(map);
-      group.addLayer(marker);
+      results.sort((a, b) => b.score - a.score);
+      showResults(results.slice(0, 5), maxScore);
     });
 
-    if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.4));
-  });
-</script>
+    function showResults(topResults, maxScore) {
+      const group = L.featureGroup();
+      topResults.forEach(({ name, loc, score }) => {
+        const iso2 = (loc.iso2 || '').toLowerCase();
+        const flagImg = iso2 ? `<img src="https://flagcdn.com/24x18/${iso2}.png" alt="${iso2.toUpperCase()} flag" class="inline-block mr-2 rounded-sm shadow">` : '';
+
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.innerHTML = `
+          <h2 class="text-xl font-semibold mb-2">${flagImg}${name}</h2>
+          <p><strong>Match:</strong> ${score}/${maxScore}</p>
+          <p><strong>Disaster:</strong> ${loc.disaster}</p>
+          <p><strong>Climate:</strong> ${loc.climate}</p>
+          <p><strong>Stability:</strong> ${loc.stability}</p>
+          <p><strong>Privacy:</strong> ${loc.privacy}</p>
+          <p><strong>Land Price:</strong> ${loc.land_price}</p>
+          <p><strong>Labour Cost:</strong> ${loc.labour_cost}</p>
+          <p><strong>Connectivity:</strong> ${loc.connectivity}</p>
+          <p><strong>Relations:</strong> ${loc.relations}</p>`;
+        resultsDiv.appendChild(card);
+
+        const marker = L.marker([loc.lat, loc.lng])
+          .bindPopup(`${flagImg}<b>${name}</b><br>Score: ${score}/${maxScore}`);
+        marker.addTo(map);
+        group.addLayer(marker);
+      });
+
+      if (group.getLayers().length) map.fitBounds(group.getBounds().pad(0.4));
+    }
+  </script>
 </body>
 </html>
